@@ -1,6 +1,7 @@
 .vscode/
 build.ninja
 .gdb_history
+crap
 
 # Prerequisites
 *.d
