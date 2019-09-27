@@ -42,7 +42,7 @@ def profile(func, inp, n_repeat=100, warmup=10):
     return (np.array(fwd_times)/1000, # Elapsed time is in ms
             np.array(bwd_times)/1000)
 
-mish_soft = lambda x: x.mul(torch.tanh(F.softplus(x)))
+mish_pt = lambda x: x.mul(torch.tanh(F.softplus(x)))
 
 if __name__ == '__main__':
     parser = ArgumentParser()
@@ -54,7 +54,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     dev = torch.device(type='cuda', index=args.device)
     sz_str = args.size.replace(' ','')
-    if not re.match(r"[\(\[]\d+(,\d+)*[\)\]]", args.size):
+    if not re.match(r"[\(\[]\d+(,\d+)*[\)\]]", sz_str):
         exit("Badly formatted size, should be a list or tuple such as \"(1,2,3)\".")
     sz = list(map(int, sz_str[1:-1].split(',')))
     inp = torch.randn(*sz, dtype=torch.float32, device=dev)
@@ -63,7 +63,7 @@ if __name__ == '__main__':
     print(f"Profiling on {torch.cuda.get_device_name(dev)}")
     timings = []
     funcs = {}
-    if args.baseline: funcs.update(relu=torch.nn.functional.relu, softplus=torch.nn.functional.softplus, mish_soft=mish_soft)
+    if args.baseline: funcs.update(relu=torch.nn.functional.relu, softplus=torch.nn.functional.softplus, mish_pt=mish_pt)
     funcs['mish_cuda'] = MishCudaFunction.apply
     max_name = max(map(len, funcs.keys())) + 6
     for (name,func) in funcs.items():

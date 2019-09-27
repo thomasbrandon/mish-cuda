@@ -3,12 +3,13 @@ from torch.utils.cpp_extension import BuildExtension, CUDAExtension
 
 EXT_SRCS = [
     'csrc/mish_cuda.cpp',
+    'csrc/mish_cpu.cpp',
     'csrc/mish_kernel.cu',
 ]
 
 setup(
     name='mish_cuda',
-    version='0.0.1',
+    version='0.0.2',
     packages=find_packages('src'),
     package_dir={'': 'src'},
     include_package_data=True,

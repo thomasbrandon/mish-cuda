@@ -8,18 +8,32 @@ mish_forward_pt = lambda x: x.mul(torch.tanh(F.softplus(x)))
 class Mish(torch.nn.Module):
     def forward(self, x): return mish_forward_pt(x)
 
-@pytest.fixture(params=[(ndim,dtype)
-                        for dtype in [torch.float16,torch.float32,torch.float64]
-                        for ndim in [1,2,3,4,8]])
+def get_input_params():
+    devs = ['cpu']
+    if torch.cuda.is_available() and torch.cuda.device_count() > 0:
+        devs += ['cuda:0'] # TODO: Allow other devices
+    dev_types = [(dtype,device)
+                 for dtype in [torch.float16,torch.float32,torch.float64]
+                 for device in devs
+                 # Basic ops not supported on CPU/Half, could test by converting but skip for now
+                 if not (dtype==torch.float16 and torch.device(device).type == 'cpu')] 
+    inputs = [(ndim,dtype,device)
+              for (dtype,device) in dev_types
+              for ndim in [1,2,3,4,8]]
+    return inputs
+
+@pytest.fixture(params=get_input_params())
 def test_input(request):
-    ndim,dtype = request.param
+    ndim,dtype,device = request.param
     sz = (2,) * (ndim-1) + (10,)
-    t = torch.rand(*sz, device='cuda:0', dtype=dtype)
+    if device == 'cpu' and dtype == torch.float16:
+        return torch.randn(*sz).half() # No randn for half on CPU
+    t = torch.randn(*sz, device=device, dtype=dtype)
     return t
 
 def test_forward(test_input):
-    from mish_cuda import mish_forward_cuda
-    res = mish_forward_cuda(test_input)
+    from mish_cuda import mish_forward
+    res = mish_forward(test_input)
     exp = mish_forward_pt(test_input)
     assert_allclose(res, exp)
 
@@ -30,12 +44,11 @@ def get_grads(inp):
     exp, = torch.autograd.grad(y, inp, grad_out, retain_graph=True)
     return grad_out, exp
 
-
 def test_backward(test_input):
-    from mish_cuda import mish_backward_cuda
+    from mish_cuda import mish_backward
     x = test_input.requires_grad_()
     grad_out,exp = get_grads(test_input)
-    res = mish_backward_cuda(test_input.detach(), grad_out)
+    res = mish_backward(test_input.detach(), grad_out)
     assert_allclose(res, exp)
 
 def test_function(test_input):
@@ -50,7 +63,6 @@ def test_function(test_input):
     l2 = y2.mean()
     res, = torch.autograd.grad(l2, x2)
     assert_allclose(res, exp)
-
 
 def test_module(test_input):
     from mish_cuda import MishCuda
