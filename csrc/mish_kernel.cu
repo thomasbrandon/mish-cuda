@@ -1,3 +1,5 @@
+#include "mish_kernels.h"
+
 #include <torch/types.h>
 #include <cuda_runtime.h>
 
@@ -23,22 +25,23 @@ namespace at {namespace native { namespace legacy { namespace cuda {
 namespace kernel {
 #include "mish.h"
 
-using at::cuda::CUDA_tensor_apply2;
 using at::cuda::CUDA_tensor_apply3;
+using at::cuda::CUDA_tensor_apply4;
 using at::cuda::TensorArgType;
 
 template <typename scalar_t>
 void
 mish_forward(
   torch::Tensor &output,
+  torch::Tensor &inter,
   const torch::Tensor &input
 ) {
-  CUDA_tensor_apply2<scalar_t,scalar_t>(
-    output, input,
-    [=] __host__ __device__ (scalar_t &out, const scalar_t &inp) {
-      mish_fwd_func(out, inp);
+  CUDA_tensor_apply3<scalar_t,scalar_t,scalar_t>(
+    output, inter, input,
+    [=] __host__ __device__ (scalar_t &out, scalar_t &inter, const scalar_t &inp) {
+      mish_fwd_func(out, inter, inp);
     },
-    TensorArgType::ReadWrite, TensorArgType::ReadOnly
+    TensorArgType::ReadWrite, TensorArgType::ReadWrite, TensorArgType::ReadOnly
   );
 }
 
@@ -47,14 +50,15 @@ void
 mish_backward(
   torch::Tensor &grad_inp,
   const torch::Tensor &input,
+  const torch::Tensor &inter,
   const torch::Tensor &grad_out
 ) {
-  CUDA_tensor_apply3<scalar_t,scalar_t,scalar_t>(
-    grad_inp, input, grad_out,
-    [=] __host__ __device__ (scalar_t &grad_inp, const scalar_t &inp, const scalar_t &grad_out) {
-      mish_bwd_func(grad_inp, inp, grad_out);
+  CUDA_tensor_apply4<scalar_t,scalar_t,scalar_t,scalar_t>(
+    grad_inp, input, inter, grad_out,
+    [=] __host__ __device__ (scalar_t &grad_inp, const scalar_t &inp, const scalar_t &inter, const scalar_t &grad_out) {
+      mish_bwd_func(grad_inp, inp, inter, grad_out);
     },
-    TensorArgType::ReadWrite, TensorArgType::ReadOnly, TensorArgType::ReadOnly
+    TensorArgType::ReadWrite, TensorArgType::ReadOnly, TensorArgType::ReadOnly, TensorArgType::ReadOnly
   );
 }
 
@@ -62,20 +66,21 @@ mish_backward(
 
 void
 mish_forward_cuda(
-    torch::Tensor &output, const torch::Tensor &input
+    torch::Tensor &output, torch::Tensor &inter, const torch::Tensor &input
 ) {
-  auto in_arg  = torch::TensorArg(input,  "input",  0),
-       out_arg = torch::TensorArg(output, "output", 1);
-  torch::checkAllDefined("mish_forward_cuda", {in_arg, out_arg});
-  torch::checkAllSameGPU("mish_forward_cuda", {in_arg, out_arg});
+  auto in_arg    = torch::TensorArg(input,  "input",  0),
+       inter_arg = torch::TensorArg(inter,  "inter",  1),
+       out_arg   = torch::TensorArg(output, "output", 2);
+  torch::checkAllDefined("mish_forward_cuda", {in_arg, inter_arg, out_arg});
+  torch::checkAllSameGPU("mish_forward_cuda", {in_arg, inter_arg, out_arg});
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(input.scalar_type(), "mish_forward_cuda", [&] {
-      kernel::mish_forward<scalar_t>(output, input);
+      kernel::mish_forward<scalar_t>(output, inter, input);
   });
 }
 
 void
 mish_backward_cuda(
-  torch::Tensor &grad_inp, const torch::Tensor &input, const torch::Tensor &grad_out
+  torch::Tensor &grad_inp, const torch::Tensor &input, const torch::Tensor &inter, const torch::Tensor &grad_out
 ) {
   auto gi_arg = torch::TensorArg(grad_inp, "grad_inp", 0),
        in_arg = torch::TensorArg(input,    "input",    1),
@@ -83,6 +88,6 @@ mish_backward_cuda(
   torch::checkAllDefined("mish_backward_cuda", {gi_arg, in_arg, go_arg});
   torch::checkAllSameGPU("mish_backward_cuda", {gi_arg, in_arg, go_arg});
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(grad_inp.scalar_type(), "mish_backward_cuda", [&] {
-      kernel::mish_backward<scalar_t>(grad_inp, input, grad_out);
+      kernel::mish_backward<scalar_t>(grad_inp, input, inter, grad_out);
   });
 }
