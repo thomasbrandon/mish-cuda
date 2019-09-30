@@ -1,6 +1,15 @@
 #include <torch/types.h>
 #include <cuda_runtime.h>
+
+// NASTY HACK for import error
+#define _th_copy_ignoring_overlaps_ HACK
+namespace at {namespace native { namespace legacy { namespace cuda {
+  at::Tensor & HACK(at::Tensor &self, const at::Tensor &src) {
+      TORCH_CHECK(false, "Overlapping/non-contiguous tensors not allowed");
+  }
+}}}}
 #include <ATen/cuda/CUDAApplyUtils.cuh>
+#undef _th_copy_ignoring_overlaps_
 
 // TORCH_CHECK replaces AT_CHECK in PyTorch 1,2, support 1.1 as well.
 #ifndef TORCH_CHECK
