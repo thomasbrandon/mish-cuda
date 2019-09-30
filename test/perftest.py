@@ -20,16 +20,13 @@ def display_times(times):
 
 def profile(func, inp, n_repeat=100, warmup=10):
     fwd_times,bwd_times = [],[]
-    for i in range(warmup):
-        x = inp.clone().requires_grad_()
-        _ = torch.autograd.grad(func(x).mean(), x)
-    for i in range(n_repeat):
+    for i in range(n_repeat + warmup):
         start,end = (torch.cuda.Event(enable_timing=True) for _ in range(2))
         start.record()
         res = func(inp)
         end.record()
         torch.cuda.synchronize()
-        fwd_times.append(start.elapsed_time(end))
+        if i >= warmup: fwd_times.append(start.elapsed_time(end))
         start,end = (torch.cuda.Event(enable_timing=True) for _ in range(2))
         inp = inp.clone().requires_grad_()
         y = func(inp)
@@ -38,7 +35,7 @@ def profile(func, inp, n_repeat=100, warmup=10):
         _ = torch.autograd.grad(l, inp)
         end.record()
         torch.cuda.synchronize()
-        bwd_times.append(start.elapsed_time(end))
+        if i >= warmup: bwd_times.append(start.elapsed_time(end))
     return (np.array(fwd_times)/1000, # Elapsed time is in ms
             np.array(bwd_times)/1000)
 
