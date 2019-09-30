@@ -8,7 +8,6 @@ void mish_backward_cuda(torch::Tensor &grad_inp, const torch::Tensor &input, con
 void mish_forward_cpu(torch::Tensor &output, const torch::Tensor &input);
 void mish_backward_cpu(torch::Tensor &grad_inp, const torch::Tensor &input, const torch::Tensor &grad_out);
 
-
 torch::Tensor
 mish_forward(const torch::Tensor &input, const at::optional<torch::Tensor> out) {
   auto input_arg = torch::TensorArg(input, "input", 0);
@@ -37,7 +36,7 @@ mish_backward(const torch::Tensor &input, const torch::Tensor &grad_out) {
   auto grad_out_arg = torch::TensorArg(grad_out, "grad_out", 1);
   torch::checkSameType("mish_backward", input_arg, grad_out_arg);
 
-  torch::Tensor grad_inp = torch::empty_like(input);
+  auto grad_inp = torch::empty_like(input);
   switch (input.device().type()) {
     case c10::kCUDA:
       mish_backward_cuda(grad_inp, input, grad_out);

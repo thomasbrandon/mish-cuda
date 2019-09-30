@@ -18,7 +18,6 @@ mish_forward(
   );
 }
 
-
 template <typename scalar_t>
 void
 mish_backward(
