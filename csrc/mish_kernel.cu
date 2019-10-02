@@ -1,6 +1,6 @@
 #include <torch/types.h>
 #include <cuda_runtime.h>
-#include <ATen/cuda/CUDAApplyUtils.cuh>
+#include "CUDAApplyUtils.cuh"
 
 // TORCH_CHECK replaces AT_CHECK in PyTorch 1,2, support 1.1 as well.
 #ifndef TORCH_CHECK

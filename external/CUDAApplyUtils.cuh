@@ -1,4 +1,7 @@
+
 // Taken from https://github.com/pytorch/pytorch/blob/ff6cda0da6d8fceadbe0cf31ef73c78d3c9e9bcc/aten/src/ATen/cuda/CUDAApplyUtils.cuh
+// Changes marked with TB:
+
 #pragma once
 
 #include <ATen/cuda/detail/IndexUtils.cuh>
@@ -6,7 +9,6 @@
 #include <THC/THCAtomics.cuh>
 #include <ATen/cuda/CUDAContext.h>
 #include <c10/macros/Macros.h>
-#include <ATen/LegacyTHFunctionsCUDA.h>
 
 #include <math.h>
 
@@ -753,10 +755,8 @@ inline bool CUDA_tensor_apply1(at::Tensor a,
 #undef HANDLE_A_CASE
 
   if (oldA.defined()) {
-    // Ignore overlaps when copying back; if we use copy
-    // instead, it will recursively try and invoke ourselves to make
-    // oldA contiguous.
-    at::native::legacy::cuda::_th_copy_ignoring_overlaps_(oldA, a);
+    // TB: No need for _th_copy_ignoring_overlaps_
+    oldA.copy_(a);
   }
 
   return true;
@@ -903,17 +903,13 @@ inline bool CUDA_tensor_apply2(at::Tensor a,
 #undef HANDLE_A_CASE
 
   if (oldA.defined()) {
-    // Ignore overlaps when copying back; if we use copy
-    // instead, it will recursively try and invoke ourselves to make
-    // oldA contiguous.
-    at::native::legacy::cuda::_th_copy_ignoring_overlaps_(oldA, a);
+    // TB: No need for _th_copy_ignoring_overlaps_
+    oldA.copy_(a);
   }
 
   if (oldB.defined()) {
-    // Ignore overlaps when copying back; if we use copy
-    // instead, it will recursively try and invoke ourselves to make
-    // oldB contiguous.
-    at::native::legacy::cuda::_th_copy_ignoring_overlaps_(oldB, b);
+    // TB: No need for _th_copy_ignoring_overlaps_
+    oldB.copy_(b);
   }
 
   return true;
@@ -1091,27 +1087,18 @@ inline bool CUDA_tensor_apply3(at::Tensor a,
 #undef HANDLE_A_CASE
 
   if (oldA.defined()) {
-    // Ignore overlaps when copying back; if we use THCTensor_copy
-    // instead, it will recursively try and invoke ourselves to make
-    // oldA contiguous.
-    at::native::legacy::cuda::_th_copy_ignoring_overlaps_(oldA, a);
-    a = oldA;
+    // TB: No need for _th_copy_ignoring_overlaps_
+    oldA.copy_(a);
   }
 
   if (oldB.defined()) {
-    // Ignore overlaps when copying back; if we use THCTensor_copy
-    // instead, it will recursively try and invoke ourselves to make
-    // oldB contiguous.
-    at::native::legacy::cuda::_th_copy_ignoring_overlaps_(oldB, b);
-    b = oldB;
+    // TB: No need for _th_copy_ignoring_overlaps_
+    oldB.copy_(b);
   }
 
   if (oldC.defined()) {
-    // Ignore overlaps when copying back; if we use THCTensor_copy
-    // instead, it will recursively try and invoke ourselves to make
-    // oldC contiguous.
-    at::native::legacy::cuda::_th_copy_ignoring_overlaps_(oldC, c);
-    c = oldC;
+    // TB: No need for _th_copy_ignoring_overlaps_
+    oldC.copy_(c);
   }
 
   return true;
@@ -1328,31 +1315,23 @@ inline bool CUDA_tensor_apply4(at::Tensor a,
 #undef HANDLE_A_CASE
 
   if (oldA.defined()) {
-    // Ignore overlaps when copying back; if we use THCTensor_copy
-    // instead, it will recursively try and invoke ourselves to make
-    // oldA contiguous.
-    at::native::legacy::cuda::_th_copy_ignoring_overlaps_(oldA, a);
+    // TB: No need for _th_copy_ignoring_overlaps_
+    oldA.copy_(a);
   }
 
   if (oldB.defined()) {
-    // Ignore overlaps when copying back; if we use THCTensor_copy
-    // instead, it will recursively try and invoke ourselves to make
-    // oldB contiguous.
-    at::native::legacy::cuda::_th_copy_ignoring_overlaps_(oldB, b);
+    // TB: No need for _th_copy_ignoring_overlaps_
+    oldB.copy_(b);
   }
 
   if (oldC.defined()) {
-    // Ignore overlaps when copying back; if we use THCTensor_copy
-    // instead, it will recursively try and invoke ourselves to make
-    // oldC contiguous.
-    at::native::legacy::cuda::_th_copy_ignoring_overlaps_(oldC, c);
+    // TB: No need for _th_copy_ignoring_overlaps_
+    oldC.copy_(c);
   }
 
   if (oldD.defined()) {
-    // Ignore overlaps when copying back; if we use THCTensor_copy
-    // instead, it will recursively try and invoke ourselves to make
-    // oldC contiguous.
-    at::native::legacy::cuda::_th_copy_ignoring_overlaps_(oldD, c);
+    // TB: No need for _th_copy_ignoring_overlaps_
+    oldD.copy_(d);
   }
 
   return true;
