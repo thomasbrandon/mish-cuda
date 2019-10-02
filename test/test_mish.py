@@ -88,3 +88,13 @@ def test_gradgrad():
     from mish_cuda import MishCudaFunction
     inp = torch.randn(10, 10, dtype=torch.float64, requires_grad=True, device='cuda:0')
     assert torch.autograd.gradgradcheck(MishCudaFunction.apply, inp)
+
+def test_overlapping():
+    '''Test handling of overlapping output tensors'''
+    from mish_cuda import mish_forward
+    t = torch.randn(2, 10, device='cuda:0')
+    t_o = t.as_strided((3,10), (5,1)) # OVerlapping
+    t_c = t_o.contiguous()             # Contiguous
+    o_o = mish_forward(t_o, torch.empty_like(t_o))
+    o_c = mish_forward(t_c, torch.empty_like(t_c))
+    assert torch.equal(o_o, o_c)
