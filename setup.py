@@ -14,6 +14,7 @@ setup(
     package_dir={'': 'src'},
     include_package_data=True,
     zip_safe=False,
+    install_requires=['torch>=1.2'],
     ext_modules=[
         CUDAExtension(
             'mish_cuda._C',
