@@ -1,6 +1,8 @@
 from setuptools import setup, find_packages
 from torch.utils.cpp_extension import BuildExtension, CUDAExtension
 
+import os
+
 EXT_SRCS = [
     'csrc/mish_cuda.cpp',
     'csrc/mish_cpu.cpp',
@@ -23,7 +25,7 @@ setup(
                 'cxx': [],
                 'nvcc': ['--expt-extended-lambda']
             },
-            include_dirs=['external']
+            include_dirs=[os.getcwd()+'/external']
         )
     ],
     cmdclass={
